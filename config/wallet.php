@@ -17,6 +17,17 @@ return [
     ],
 
     /*
+    | Per-user withdrawal limits, per currency, as decimal strings. "daily"
+    | counts from midnight and "monthly" from the 1st, in the app timezone.
+    */
+    'withdrawal_limits' => [
+        'USD' => ['daily' => env('WITHDRAWAL_DAILY_LIMIT_USD', '5000.00'), 'monthly' => env('WITHDRAWAL_MONTHLY_LIMIT_USD', '20000.00')],
+        'BDT' => ['daily' => env('WITHDRAWAL_DAILY_LIMIT_BDT', '500000.00'), 'monthly' => env('WITHDRAWAL_MONTHLY_LIMIT_BDT', '2000000.00')],
+        'BTC' => ['daily' => env('WITHDRAWAL_DAILY_LIMIT_BTC', '0.50000000'), 'monthly' => env('WITHDRAWAL_MONTHLY_LIMIT_BTC', '2.00000000')],
+        'USDT' => ['daily' => env('WITHDRAWAL_DAILY_LIMIT_USDT', '5000.000000'), 'monthly' => env('WITHDRAWAL_MONTHLY_LIMIT_USDT', '20000.000000')],
+    ],
+
+    /*
     | How long a user's money-moving request holds the Redis submit lock, in
     | seconds. It is released as soon as the request finishes; the TTL only
     | matters if the worker dies mid-request.

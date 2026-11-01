@@ -32,6 +32,7 @@ final readonly class WithdrawalService
         private WalletService $wallets,
         private LedgerWriter $ledger,
         private GatewayRegistry $gateways,
+        private WithdrawalLimits $limits,
     ) {}
 
     public function withdraw(User $user, string $gatewayName, Money $amount, string $destination): Withdrawal
@@ -56,6 +57,7 @@ final readonly class WithdrawalService
         try {
             return $this->db->transaction(function () use ($user, $gateway, $gatewayName, $amount, $destination, $walletId, $reference, &$acceptedAs): Withdrawal {
                 $wallet = $this->wallets->lock((int) $walletId);
+                $this->limits->check($wallet, $amount);
                 $this->wallets->debit($wallet, $amount);
 
                 $withdrawal = new Withdrawal;
