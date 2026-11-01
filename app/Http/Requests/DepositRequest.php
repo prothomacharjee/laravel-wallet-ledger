@@ -12,7 +12,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 
-final class DepositRequest extends FormRequest
+/** Gateway, currency and amount: shared by deposits and withdrawals. */
+class DepositRequest extends FormRequest
 {
     /** @return array<string, mixed> */
     public function rules(GatewayRegistry $gateways): array

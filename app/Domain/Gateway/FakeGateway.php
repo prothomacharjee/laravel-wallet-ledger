@@ -7,19 +7,22 @@ namespace App\Domain\Gateway;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use DateTimeInterface;
+use Illuminate\Container\Attributes\Database;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
 
 /**
  * Stands in for a real provider. Its "remote" records live in the
- * fake_gateway_payments table so separate processes (web, scheduler,
- * artisan) all see the same provider state.
+ * fake_gateway_* tables so separate processes (web, scheduler, artisan)
+ * all see the same provider state. It writes through its own "gateway"
+ * connection, so rolling back our transaction cannot undo what it did,
+ * just as with a real provider.
  */
 abstract class FakeGateway implements PaymentGateway
 {
     public function __construct(
-        protected readonly ConnectionInterface $db,
+        #[Database('gateway')] protected readonly ConnectionInterface $db,
         protected readonly Config $config,
     ) {}
 
@@ -63,6 +66,41 @@ abstract class FakeGateway implements PaymentGateway
             $row->deposit_reference,
             Money::ofMinor((int) $row->amount, Currency::from($row->currency)),
         ))->all());
+    }
+
+    /** Rejects any destination starting with "reject", so tests and demos can trigger a refusal. */
+    public function withdraw(string $reference, Money $amount, string $destination): string
+    {
+        if (str_starts_with($destination, 'reject')) {
+            throw GatewayRejected::withdrawal($this->name(), 'destination refused');
+        }
+
+        $existing = $this->db->table('fake_gateway_withdrawals')->where('reference', $reference)->value('transaction_id');
+        if (is_string($existing)) {
+            return $existing;
+        }
+
+        $transactionId = $this->name().'_wd_'.Str::lower((string) Str::ulid());
+        $this->db->table('fake_gateway_withdrawals')->insert([
+            'gateway' => $this->name(),
+            'reference' => $reference,
+            'amount' => $amount->amount,
+            'currency' => $amount->currency->value,
+            'destination' => $destination,
+            'transaction_id' => $transactionId,
+            'status' => 'accepted',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $transactionId;
+    }
+
+    public function cancelWithdrawal(string $transactionId): void
+    {
+        $this->db->table('fake_gateway_withdrawals')
+            ->where('transaction_id', $transactionId)
+            ->update(['status' => 'cancelled', 'updated_at' => now()]);
     }
 
     /** Simulates the customer paying. Returns what the provider would then report. */

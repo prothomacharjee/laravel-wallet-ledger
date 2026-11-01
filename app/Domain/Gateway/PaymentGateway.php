@@ -27,4 +27,17 @@ interface PaymentGateway
      * @return list<GatewayPayment>
      */
     public function paymentsSince(DateTimeInterface $since): array;
+
+    /**
+     * Sends a payout. $reference is our ID; the provider treats a repeated
+     * reference as the same payout.
+     *
+     * @return string the provider's transaction ID
+     *
+     * @throws GatewayRejected when the provider refuses the payout
+     */
+    public function withdraw(string $reference, Money $amount, string $destination): string;
+
+    /** Asks the provider to cancel a payout it accepted. */
+    public function cancelWithdrawal(string $transactionId): void;
 }

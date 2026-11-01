@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $balance
  * @property int $ledger_account_id
  * @property-read LedgerAccount $ledgerAccount
+ * @property-read User $user
  */
 class Wallet extends Model
 {

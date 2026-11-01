@@ -36,7 +36,7 @@ class DepositEndpointTest extends TestCase
             ->assertJson(['gateway' => 'fake-crypto', 'status' => 'pending', 'amount' => '0.01500000', 'currency' => 'BTC'])
             ->json('reference');
 
-        $this->assertDatabaseHas('fake_gateway_payments', ['deposit_reference' => $reference, 'amount' => 1_500_000]);
+        $this->assertDatabaseHas('fake_gateway_payments', ['deposit_reference' => $reference, 'amount' => 1_500_000], 'gateway');
     }
 
     public function test_only_one_pending_deposit_per_payment_method(): void
@@ -67,7 +67,7 @@ class DepositEndpointTest extends TestCase
             ->assertJsonPath('message', fn (string $m) => str_contains($m, 'maximum balance'));
 
         $this->assertSame(0, DB::table('deposits')->count());
-        $this->assertSame(0, DB::table('fake_gateway_payments')->count());
+        $this->assertSame(0, DB::connection('gateway')->table('fake_gateway_payments')->count());
     }
 
     public function test_gateway_must_support_the_currency(): void
