@@ -68,11 +68,17 @@ abstract class FakeGateway implements PaymentGateway
         ))->all());
     }
 
-    /** Rejects any destination starting with "reject", so tests and demos can trigger a refusal. */
+    /**
+     * A destination starting with "reject" is refused and one starting with
+     * "unavailable" times out, so tests and demos can trigger both.
+     */
     public function withdraw(string $reference, Money $amount, string $destination): string
     {
         if (str_starts_with($destination, 'reject')) {
             throw GatewayRejected::withdrawal($this->name(), 'destination refused');
+        }
+        if (str_starts_with($destination, 'unavailable')) {
+            throw GatewayUnavailable::for($this->name());
         }
 
         $existing = $this->db->table('fake_gateway_withdrawals')->where('reference', $reference)->value('transaction_id');

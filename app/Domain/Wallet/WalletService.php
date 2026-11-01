@@ -80,6 +80,18 @@ final readonly class WalletService
         $this->store($wallet, $newBalance);
     }
 
+    /**
+     * Returns money that left this wallet earlier, such as a refused payout.
+     * Not subject to the cap: the money was already counted against it, and
+     * a refund must never be blocked.
+     *
+     * @param  Wallet  $wallet  a row locked by lock() in the current transaction
+     */
+    public function refund(Wallet $wallet, Money $amount): void
+    {
+        $this->store($wallet, $wallet->balance()->plus($amount));
+    }
+
     public function maxBalance(Currency $currency): Money
     {
         return Money::of($this->config->string("wallet.max_balance.{$currency->value}"), $currency);

@@ -30,6 +30,7 @@ final readonly class WithdrawalLimits
 
             $used = Money::ofMinor((int) Withdrawal::query()
                 ->where('wallet_id', $wallet->id)
+                ->where('status', '!=', WithdrawalStatus::Failed)
                 ->where('created_at', '>=', $since)
                 ->sum('amount'), $currency);
 

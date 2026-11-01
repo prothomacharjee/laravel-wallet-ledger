@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\CreateDepositController;
+use App\Http\Controllers\Api\CreateQueuedWithdrawalController;
 use App\Http\Controllers\Api\CreateTransferController;
 use App\Http\Controllers\Api\CreateWithdrawalController;
 use App\Http\Controllers\Api\ReceiveWebhookController;
@@ -15,6 +16,7 @@ Route::middleware(['auth:sanctum', SubmitLock::class, IdempotencyKey::class])->g
     Route::post('/transfers', CreateTransferController::class);
     Route::post('/deposits', CreateDepositController::class);
     Route::post('/withdrawals', CreateWithdrawalController::class);
+    Route::post('/withdrawals/queued', CreateQueuedWithdrawalController::class);
 });
 
 Route::post('/webhooks/{gateway}', ReceiveWebhookController::class)

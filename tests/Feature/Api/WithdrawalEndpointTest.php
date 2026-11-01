@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api;
 
+use App\Domain\Withdrawal\SendWithdrawal;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
 use Tests\Concerns\CreatesWallets;
 use Tests\TestCase;
@@ -44,6 +46,19 @@ class WithdrawalEndpointTest extends TestCase
             ->assertJsonPath('message', 'fake-fiat rejected the withdrawal: destination refused');
 
         $this->assertSame('50.00', $wallet->refresh()->balance()->toDecimal());
+    }
+
+    public function test_queued_withdrawal_is_accepted_as_pending(): void
+    {
+        Queue::fake();
+        $wallet = $this->walletFor($this->user, balance: '50.00');
+
+        $this->postJson('/api/withdrawals/queued', ['gateway' => 'fake-fiat', 'amount' => '20.00', 'currency' => 'USD', 'destination' => 'acct-123'])
+            ->assertAccepted()
+            ->assertJson(['status' => 'pending', 'amount' => '20.00', 'currency' => 'USD']);
+
+        $this->assertSame('30.00', $wallet->refresh()->balance()->toDecimal());
+        Queue::assertPushed(SendWithdrawal::class, 1);
     }
 
     public function test_withdrawal_without_a_wallet_is_rejected(): void

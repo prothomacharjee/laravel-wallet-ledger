@@ -35,6 +35,7 @@ interface PaymentGateway
      * @return string the provider's transaction ID
      *
      * @throws GatewayRejected when the provider refuses the payout
+     * @throws GatewayUnavailable when the provider cannot be reached; safe to retry
      */
     public function withdraw(string $reference, Money $amount, string $destination): string;
 

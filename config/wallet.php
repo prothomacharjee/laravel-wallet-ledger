@@ -19,6 +19,7 @@ return [
     /*
     | Per-user withdrawal limits, per currency, as decimal strings. "daily"
     | counts from midnight and "monthly" from the 1st, in the app timezone.
+    | Payouts that failed and were refunded do not count.
     */
     'withdrawal_limits' => [
         'USD' => ['daily' => env('WITHDRAWAL_DAILY_LIMIT_USD', '5000.00'), 'monthly' => env('WITHDRAWAL_MONTHLY_LIMIT_USD', '20000.00')],
