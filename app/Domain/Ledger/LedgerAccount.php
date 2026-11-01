@@ -18,6 +18,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['code', 'currency'])]
 class LedgerAccount extends Model
 {
+    /** Finds or opens a system account (gateway clearing etc.). Safe under concurrency. */
+    public static function forCode(string $code, Currency $currency): self
+    {
+        static::query()->insertOrIgnore([
+            'code' => $code,
+            'currency' => $currency->value,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return static::query()->where('code', $code)->firstOrFail();
+    }
+
     /** @return HasMany<LedgerEntry, $this> */
     public function entries(): HasMany
     {
