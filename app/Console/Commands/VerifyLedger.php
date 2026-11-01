@@ -11,14 +11,14 @@ final class VerifyLedger extends Command
 {
     protected $signature = 'ledger:verify';
 
-    protected $description = 'Check that every ledger reference nets to zero';
+    protected $description = 'Check that every ledger reference nets to zero and every wallet balance matches its ledger account';
 
     public function handle(LedgerVerifier $verifier): int
     {
         $problems = $verifier->problems();
 
         if ($problems === []) {
-            $this->info('Ledger OK: every reference nets to zero.');
+            $this->info('Ledger OK: every reference nets to zero and every wallet matches its ledger balance.');
 
             return self::SUCCESS;
         }

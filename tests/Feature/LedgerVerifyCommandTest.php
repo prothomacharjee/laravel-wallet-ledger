@@ -11,10 +11,12 @@ use App\Domain\Money\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\CreatesWallets;
 use Tests\TestCase;
 
 class LedgerVerifyCommandTest extends TestCase
 {
+    use CreatesWallets;
     use RefreshDatabase;
 
     private LedgerAccount $clearing;
@@ -49,5 +51,19 @@ class LedgerVerifyCommandTest extends TestCase
 
         $this->assertSame(1, Artisan::call('ledger:verify'));
         $this->assertStringContainsString('deposit:99 USD does not net to zero', Artisan::output());
+    }
+
+    public function test_ledger_verify_detects_a_tampered_balance(): void
+    {
+        $wallet = $this->walletFor(balance: '10.00');
+        $this->assertSame(0, Artisan::call('ledger:verify'));
+
+        DB::table('wallets')->where('id', $wallet->id)->update(['balance' => 1_000_000]);
+
+        $this->assertSame(1, Artisan::call('ledger:verify'));
+        $this->assertStringContainsString(
+            "Wallet {$wallet->id} balance 1000000 does not match its ledger balance 1000",
+            Artisan::output(),
+        );
     }
 }
