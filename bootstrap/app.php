@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('deposits:match')->everyThirtySeconds()->withoutOverlapping();
         $schedule->command('withdrawals:relay')->everyMinute()->withoutOverlapping();
+        $schedule->command('commissions:pay')->everyFiveMinutes()->withoutOverlapping();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

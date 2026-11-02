@@ -49,6 +49,6 @@ class DepositMatcherTest extends TestCase
         $line = collect(explode("\n", Artisan::output()))->first(fn (string $l) => str_contains($l, 'deposits:match'));
 
         $this->assertNotNull($line, 'deposits:match is not scheduled.');
-        $this->assertMatchesRegularExpression('/\* \* \* \* \*\s+30s\s+php artisan deposits:match/', $line);
+        $this->assertMatchesRegularExpression('/(\*\s+){5}30s\s+php artisan deposits:match/', $line);
     }
 }

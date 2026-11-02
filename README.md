@@ -23,6 +23,7 @@ I build fintech backends in production: wallets, ledgers, deposits and withdrawa
 | A failed gateway call never loses money | In-transaction withdrawal: a refusal rolls back the debit, and an accepted payout whose commit fails is cancelled upstream. Outbox withdrawal: a refusal refunds the wallet with a reversing ledger entry. | [`WithdrawalServiceTest`](tests/Integration/Withdrawal/WithdrawalServiceTest.php), [`OutboxWithdrawalServiceTest`](tests/Integration/Withdrawal/OutboxWithdrawalServiceTest.php) |
 | A retried request is not applied twice | `Idempotency-Key` header: same key and body replays the stored response, a different body gets `422`. A Redis submit lock rejects a double click before it reaches the database. | [`IdempotencyKeyTest`](tests/Feature/Api/IdempotencyKeyTest.php), [`TransferEndpointTest`](tests/Feature/Api/TransferEndpointTest.php) |
 | Deposits never exceed the balance cap | The cap is checked under the wallet lock, before any money moves. | [`DepositEndpointTest`](tests/Feature/Api/DepositEndpointTest.php), [`WalletServiceTest`](tests/Integration/Wallet/WalletServiceTest.php) |
+| Partner commission is paid exactly once and never above the top rate | A sub-partner's rate is at least 5 points below its parent's, and both shares are cut from one rounded-down total. Rows are paid in batches of 500 with a savepoint per row; the row is marked paid in the same savepoint as its wallet credits. | [`CommissionTest`](tests/Integration/Commission/CommissionTest.php) |
 | Withdrawals respect daily and monthly limits | Limits are summed under the wallet lock, so parallel requests cannot both slip under. | [`WithdrawalLimitsTest`](tests/Integration/Withdrawal/WithdrawalLimitsTest.php) |
 
 All tests run against real MySQL 8 and Redis, never SQLite ([`HealthCheckTest`](tests/Feature/HealthCheckTest.php) fails if they do not).
@@ -48,7 +49,7 @@ flowchart LR
     worker -->|after commit| gw
 ```
 
-The code lives in `app/Domain`, one folder per concept: `Money`, `Wallet`, `Ledger`, `Transfer`, `Deposit`, `Withdrawal`, `Gateway`. Controllers in `app/Http/Controllers/Api` validate input and call one service. Services own the transaction. Amounts move through the code only as the `Money` value object.
+The code lives in `app/Domain`, one folder per concept: `Money`, `Wallet`, `Ledger`, `Transfer`, `Deposit`, `Withdrawal`, `Gateway`, `Commission`. Controllers in `app/Http/Controllers/Api` validate input and call one service. Services own the transaction. Amounts move through the code only as the `Money` value object.
 
 ## Quick start
 
@@ -64,7 +65,7 @@ docker compose exec app php artisan migrate --seed
 docker compose exec app php artisan test
 ```
 
-This starts the API on `http://localhost:8000`, a queue worker, the scheduler (deposit matcher and outbox relay), MySQL 8 and Redis 7. The seeder creates `demo1@example.com` to `demo20@example.com` (password `password`), each with a USD wallet holding 500.00.
+This starts the API on `http://localhost:8000`, a queue worker, the scheduler (deposit matcher, outbox relay and commission payer), MySQL 8 and Redis 7. The seeder creates `demo1@example.com` to `demo20@example.com` (password `password`), each with a USD wallet holding 500.00.
 
 CI runs the same steps on every push: Pint, Larastan and the full suite against MySQL 8 and Redis 7 service containers.
 
@@ -176,7 +177,7 @@ I want to be clear about what this repository is. It is not employer code. It re
 - One pending request per payment method
 - Webhook settlement and 30-second deposit matching
 - Withdrawal with the gateway call inside the transaction
-- A two-level partner commission chain (not reproduced in this repository)
+- A two-level partner commission chain paid in savepointed batches (`commissions:pay`)
 
 **Added in this repository:**
 
