@@ -55,3 +55,25 @@ jobs:
 
       - name: Tests
         run: php artisan test
+
+  # Runs the README quick start exactly, so a clean clone is proven to work.
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: cp .env.example .env
+
+      - run: docker compose up -d --build --wait
+
+      - run: docker compose exec -T app php artisan key:generate
+
+      - run: docker compose exec -T app php artisan migrate --seed --force
+
+      - run: docker compose exec -T app php artisan test
+
+      - run: docker compose exec -T app php artisan ledger:verify
+
+      - if: failure()
+        run: docker compose logs
