@@ -19,7 +19,7 @@ Rules:
 2. **Append-only.** Entries are never updated or deleted. The `LedgerEntry` model throws on update and delete, and MySQL triggers reject `UPDATE` and `DELETE` on the table, so raw queries that skip the model are refused as well. A mistake is fixed with a new reversing posting, which keeps the error and its fix both visible.
 3. **Idempotent.** A unique key on `(reference_type, reference_id, ledger_account_id, direction)` means the same posting cannot be written twice. A retry hits the key and gets `DuplicatePosting`, not a second credit.
 4. **Sign convention.** An account's balance is credits minus debits. Customer wallets are positive. Clearing accounts go negative by the amount that has entered the system through them.
-5. **Verifiable.** `php artisan ledger:verify` checks that every reference nets to zero per currency, and exits non-zero if not. Step 4 extends it to check every wallet balance against its ledger account.
+5. **Verifiable.** `php artisan ledger:verify` checks that every reference nets to zero per currency and that every wallet balance equals its ledger account, and exits non-zero if not.
 
 ## Consequences
 

@@ -34,6 +34,6 @@ Good:
 
 Costs:
 
-- Requests against the same wallet run one at a time. A single very hot wallet (a merchant or house account) becomes a bottleneck. The next step there is to split it into several sub-accounts, or to credit it asynchronously from a queue.
+- Requests against the same wallet run one at a time. A single very hot wallet (such as a house or fee account) becomes a bottleneck. The next step there is to split it into several sub-accounts, or to credit it asynchronously from a queue.
 - Locks are held for the whole transaction, so nothing slow (HTTP calls, heavy queries) belongs inside it. Withdrawals break this rule on purpose. ADR 0005 explains why, and the outbox alternative.
 - The submit lock is per user, not per endpoint: a user cannot run a transfer and a withdrawal in parallel. That is acceptable for a wallet and simpler to reason about.
